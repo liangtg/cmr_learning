@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+    "name": "人大题库",
+    "version": "1.0.0",
+    "description": "人大数据库获取",
+    "page_action": {
+        "default_icon": "img/icon.png",
+        "default_title": "我是pageAction",
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "http://learning.cmr.com.cn/student/acourse/HomeworkCenter/index.asp?courseid=*"
+            ],
+            "js": [
+                "js/content_script.js"
+            ],
+            "run_at": "document_start",
+            "permissions": [
+                "webRequest",
+                "webRequestBlocking",
+                "storage",
+                "tabs"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        "js/inject.js"
+    ]
+}
