@@ -26,6 +26,7 @@
         }
     ],
     "web_accessible_resources": [
-        "js/inject.js"
+        "js/inject.js",
+        "page_action.html"
     ]
 }

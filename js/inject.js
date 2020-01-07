@@ -9,9 +9,9 @@ var cmrData = {
     links: [],
     title: '',
     url: '',
+    tikuCount: 0,
     shift: function () {
         this.times++;
-        console.log(this.times)
         if (this.times < this.retry) return;
         if (this.times >= this.retry) this.times = 0;
         this.title = this.titles.shift();
@@ -22,7 +22,6 @@ var cmrData = {
 function loadUrl(url, fun) {
     $("#cmrtmp").load(url, function (response, status, xhr) {
         if ('success' == status) {
-            console.log('load success');
             if (response.length <= 50) console.log(response)
             fun();
         }
@@ -31,7 +30,7 @@ function loadUrl(url, fun) {
 
 
 function loadLinks() {
-    console.log('load link start' + cmrData.titles.length)
+    updateTikuCount();
     if (cmrData.titles.length <= 0) return;
     cmrData.shift();
     console.log(cmrData.url)
@@ -40,7 +39,7 @@ function loadLinks() {
         for (let index = 0; index < sts.length; index++) {
             const st = sts[index];
             try {
-                var stType = st.getElementsByClassName('st_title')[0].innerText.split('¡¢')[1];
+                var stType = st.getElementsByClassName('st_title')[0].innerText.split('ã€')[1];
                 var stID = st.getElementsByTagName('table')[1].getElementsByTagName('td')[0].innerText.slice(1, -1);
                 var stQues = st.getElementsByTagName('table')[1].getElementsByClassName('MsoNormal')[0].innerText;
                 var stAnswer = st.querySelector('#answer').innerText.slice(4);
@@ -54,7 +53,6 @@ function loadLinks() {
             }
 
         }
-        console.log('continue load links');
         window.setTimeout(loadLinks, cmrData.interval);
     });
 
@@ -71,8 +69,6 @@ function startLoadLianxi() {
     loadUrl(lianxi + _global_data["courseid"] + " .result", function () {
         let tbody = document.getElementById('cmrtmp').getElementsByTagName('tbody')[0]
         let trs = tbody.getElementsByTagName('tr')
-
-
         for (let index = 0; index < trs.length; index++) {
             const tr = trs[index];
             cmrData.titles[index] = tr.getElementsByClassName('capture')[0].innerText
@@ -88,36 +84,24 @@ function startLoadLianxi() {
 function findST() {
     let iframe = document.getElementById("iframe");
     if (iframe === null) return;
-    // "http://learning.cmr.com.cn/student/acourse/HomeworkCenter/PracDeal.asp*"
-    //  iframe.setAttribute('onload',findST);
-    //  iframeResize();
     let iwindow = iframe.contentWindow;
     let idoc = iwindow.document;
     let sts = idoc.getElementsByClassName('st_cont');
-    if (sts.length == 0) {
-    }
-    console.log('find ÊÔÌâ' + sts.length)
+
+    console.log('find è¯•é¢˜' + sts.length)
     for (let index = 0; index < sts.length; index++) {
         const st = sts[index];
-        // let stType = st.getElementsByClassName('st_title')[0].innerText.split('¡¢')[1];
         let stID = st.getElementsByTagName('table')[0].getElementsByTagName('td')[0].innerText.slice(1, -1);
-        // console.log("ÊÔÌâID:" + stID)
-        // let stQues = st.getElementsByTagName('table')[1].getElementsByClassName('MsoNormal')[0].innerText;
         let stAnswer = localStorage[cmrData.cid + '.' + stID + '.a'];
         let stANum = -1;
-        if ("ÕýÈ·" == stAnswer) stANum = 1;
-        else if ('´íÎó' == stAnswer) stANum = 0;
+        if ("æ­£ç¡®" == stAnswer) stANum = 1;
+        else if ('é”™è¯¯' == stAnswer) stANum = 0;
         // console.log('q:' + stID + ' a: ' + (stAnswer ? (stAnswer + stAnswer.length) : "--"));
         let findA = false;
         let inputs = st.getElementsByTagName('input');
         for (let iindex = 0; iindex < inputs.length; iindex++) {
             const input = inputs[iindex];
-            // console.log(input.value + stAnswer+input.innerText)
-            // console.log(stAnswer.length + stAnswer)
-            // console.log(input.value == stAnswer)
             let inputText = input.innerText.trim().replace(/[\r\n]/g, "");
-            // console.log(input.value)
-            // console.log(inputText ? (inputText + inputText.length) : "...")
             if (input.value == stAnswer || input.value == stANum || inputText == stAnswer) {
                 input.checked = true;
                 findA = true;
@@ -134,14 +118,59 @@ function findST() {
     }
 }
 
-// window.setInterval(findST, 2000)
-var actionArea = document.createElement('div');
-actionArea.setAttribute('style', 'position: fixed; right: 0px; top: 0px;');
-var actionBtn = document.createElement('button');
-actionBtn.setAttribute('onClick', 'findST()');
-actionBtn.innerText = 'ËÑË÷´ð°¸'
-actionArea.appendChild(actionBtn)
+function exportTiku() {
+    if (cmrData.tikuCount == 0) return;
+    let id = cmrData.cid;
+    let type;
+    let list = {};
+    let ids = [];
+    for (let index = 0; index < localStorage.length; index++) {
+        let key = localStorage.key(index);
+        if (key.startsWith(cmrData.cid)) {
+            id = key.split('.', 2)[1];
+            if (ids.indexOf(id) != -1) {
+                continue;
+            }
+            ids.push(id);
+            type = localStorage.getItem(cmrData.cid + '.' + id + '.t');
+            if (!list[type]) list[type] = [];
+            list[type].push({ id: id, q: localStorage.getItem(cmrData.cid + '.' + id + '.q'), a: localStorage.getItem(cmrData.cid + '.' + id + '.a') });
+        }
+    }
+    console.log(list)
+    let keys = Object.keys(list);
+    keys.forEach(function (key) {
+        list[key].sort(function (a, b) {
+            return a.id - b.id;
+        });
+    });
+    console.log(list)
+    let newBody = document.createElement('div');
+    keys.forEach(function (key) {
+        newBody.appendChild(document.createElement('div')).innerText = key;
+        let stList = newBody.appendChild(document.createElement('div'));
+        list[key].forEach(function (item) {
+            stList.appendChild(document.createElement('div')).innerText = '['+item.id+']('+item.a+')';
+            stList.appendChild(document.createElement('div')).innerText = item.q;
+        });
+    });
+    document.body.innerHTML = newBody.innerHTML;
+}
 
-document.body.appendChild(actionArea)
+function updateTikuCount() {
+    cmrData.tikuCount = 0;
+    let id = cmrData.cid + "."
+    for (let index = 0; index < localStorage.length; index++) {
+        let key = localStorage.key(index);
+        if (key.startsWith(id)) cmrData.tikuCount++;
+    }
+    document.getElementById('tikuCount').innerText = cmrData.tikuCount / 3
+}
 
-startLoadLianxi();
+function startExecute() {
+    updateTikuCount();
+}
+
+startExecute();
+
+// startLoadLianxi();
