@@ -2,7 +2,7 @@ console.log('inject execute');
 
 var cmrData = {
     retry: 5,
-    interval: 5000,
+    interval: 3000,
     cid: _global_data["courseid"],
     times: Number.MAX_VALUE - 1,
     titles: [],
@@ -31,8 +31,8 @@ function loadUrl(url, fun) {
 
 function loadLinks() {
     updateTikuCount();
-    if (cmrData.titles.length <= 0) return;
     cmrData.shift();
+    if (cmrData.titles.length <= 0 && ('' == cmrData.url || undefined == cmrData.url)) return;
     console.log(cmrData.url)
     loadUrl(cmrData.url + ' .cont', function () {
         var sts = document.getElementById('cmrtmp').getElementsByClassName('st');
@@ -99,13 +99,14 @@ function findST() {
         // console.log('q:' + stID + ' a: ' + (stAnswer ? (stAnswer + stAnswer.length) : "--"));
         let findA = false;
         let inputs = st.getElementsByTagName('input');
+        let ansList = [];
+        if (stAnswer) ansList = stAnswer.split(',')
         for (let iindex = 0; iindex < inputs.length; iindex++) {
             const input = inputs[iindex];
             let inputText = input.innerText.trim().replace(/[\r\n]/g, "");
-            if (input.value == stAnswer || input.value == stANum || inputText == stAnswer) {
+            if (input.value == stAnswer || input.value == stANum || inputText == stAnswer || ansList.indexOf(input.value) != -1) {
                 input.checked = true;
                 findA = true;
-                break;
             }
         }
         if (!findA) {
@@ -118,11 +119,42 @@ function findST() {
     }
 }
 
+function saveZuoYe() {
+    let iframe = document.getElementById("iframe");
+    if (iframe === null) return;
+    let iwindow = iframe.contentWindow;
+    let idoc = iwindow.document;
+    let sts = idoc.getElementsByClassName('st_cont');
+
+    console.log('find zuo ye:' + sts.length)
+    for (let index = 0; index < sts.length; index++) {
+        const st = sts[index];
+        let stID = st.getElementsByTagName('table')[0].getElementsByTagName('td')[0].innerText.slice(1, -1);
+        let stAnswer = localStorage[cmrData.cid + '.' + stID + '.a'];
+        let stQues = st.getElementsByTagName('table')[0].getElementsByTagName('td')[1].innerText
+        let ansTag = st.nextElementSibling
+        let tmp;
+        while (ansTag) {
+            if (ansTag.tagName.toLowerCase() == 'p') {
+                tmp = ansTag.innerText;
+                break;
+            }
+            ansTag = ansTag.nextElementSibling;
+        }
+        let saveAns = tmp.slice(tmp.lastIndexOf('：') + 1).trim()
+        if (!stAnswer) {
+            console.log('save :' + stID + '-' + saveAns)
+            localStorage[cmrData.cid + '.' + stID + '.t'] = ""
+            localStorage[cmrData.cid + '.' + stID + '.q'] = stQues
+            localStorage[cmrData.cid + '.' + stID + '.a'] = saveAns.trim().replace(/[\r\n]/g, "");
+        }
+
+
+    }
+}
+
 function exportTiku() {
     if (cmrData.tikuCount == 0) return;
-    let id = cmrData.cid;
-    let type;
-    let list = {};
     let ids = [];
     for (let index = 0; index < localStorage.length; index++) {
         let key = localStorage.key(index);
@@ -150,7 +182,7 @@ function exportTiku() {
         newBody.appendChild(document.createElement('div')).innerText = key;
         let stList = newBody.appendChild(document.createElement('div'));
         list[key].forEach(function (item) {
-            stList.appendChild(document.createElement('div')).innerText = '['+item.id+']('+item.a+')';
+            stList.appendChild(document.createElement('div')).innerText = '[' + item.id + '](' + item.a + ')';
             stList.appendChild(document.createElement('div')).innerText = item.q;
         });
     });
@@ -169,6 +201,11 @@ function updateTikuCount() {
 
 function startExecute() {
     updateTikuCount();
+    if (null) {
+        console.log('null == true')
+    } else {
+        console.log('null == false')
+    }
 }
 
 startExecute();
