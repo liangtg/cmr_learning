@@ -155,6 +155,7 @@ function saveZuoYe() {
 
 function exportTiku() {
     if (cmrData.tikuCount == 0) return;
+    let list = {};
     let ids = [];
     for (let index = 0; index < localStorage.length; index++) {
         let key = localStorage.key(index);
@@ -182,8 +183,8 @@ function exportTiku() {
         newBody.appendChild(document.createElement('div')).innerText = key;
         let stList = newBody.appendChild(document.createElement('div'));
         list[key].forEach(function (item) {
-            stList.appendChild(document.createElement('div')).innerText = '[' + item.id + '](' + item.a + ')';
-            stList.appendChild(document.createElement('div')).innerText = item.q;
+            stList.appendChild(document.createElement('div')).innerText = '[' + item.id + '](' + item.q + ')';
+            stList.appendChild(document.createElement('div')).innerText = item.a;
         });
     });
     document.body.innerHTML = newBody.innerHTML;
