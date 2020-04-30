@@ -3,7 +3,7 @@ console.log('inject execute');
 var cmrData = {
     retry: 5,
     interval: 3000,
-    cid: _global_data["courseid"],
+    cid: _global_data["courseid"].toUpperCase(),
     times: Number.MAX_VALUE - 1,
     titles: [],
     links: [],
@@ -16,6 +16,8 @@ var cmrData = {
         if (this.times >= this.retry) this.times = 0;
         this.title = this.titles.shift();
         this.url = this.links.shift();
+        this.titles.push(this.title);
+        this.links.push(this.url);
     }
 };
 
@@ -41,12 +43,14 @@ function loadLinks() {
             try {
                 var stType = st.getElementsByClassName('st_title')[0].innerText.split('、')[1];
                 var stID = st.getElementsByTagName('table')[1].getElementsByTagName('td')[0].innerText.slice(1, -1);
-                var stQues = st.getElementsByTagName('table')[1].getElementsByClassName('MsoNormal')[0].innerText;
-                var stAnswer = st.querySelector('#answer').innerText.slice(4);
+                var stQues = st.getElementsByTagName('table')[1].getElementsByClassName('MsoNormal')[0].outerHTML;
+                var ansEle = st.querySelector('#answer');
+                var stAnswer = ansEle.innerText.slice(4);
                 // console.log(stType + stID + stAnswer)
                 localStorage[cmrData.cid + '.' + stID + '.t'] = stType
                 localStorage[cmrData.cid + '.' + stID + '.q'] = stQues
                 localStorage[cmrData.cid + '.' + stID + '.a'] = stAnswer.trim().replace(/[\r\n]/g, "");
+                localStorage[cmrData.cid + '.' + stID + '.aHtm'] = ansEle.outerHTML;
             } catch (error) {
                 console.log(error)
                 console.log(st)
@@ -167,7 +171,7 @@ function exportTiku() {
             ids.push(id);
             type = localStorage.getItem(cmrData.cid + '.' + id + '.t');
             if (!list[type]) list[type] = [];
-            list[type].push({ id: id, q: localStorage.getItem(cmrData.cid + '.' + id + '.q'), a: localStorage.getItem(cmrData.cid + '.' + id + '.a') });
+            list[type].push({ id: id, q: localStorage.getItem(cmrData.cid + '.' + id + '.q'), a: localStorage.getItem(cmrData.cid + '.' + id + '.aHtm') });
         }
     }
     console.log(list)
@@ -183,8 +187,9 @@ function exportTiku() {
         newBody.appendChild(document.createElement('div')).innerText = key;
         let stList = newBody.appendChild(document.createElement('div'));
         list[key].forEach(function (item) {
-            stList.appendChild(document.createElement('div')).innerText = '[' + item.id + '](' + item.q + ')';
-            stList.appendChild(document.createElement('div')).innerText = item.a;
+            stList.appendChild(document.createElement('div')).innerHTML = '[' + item.id + ']' + item.q + '';
+            stList.appendChild(document.createElement('div')).innerHTML = item.a;
+            stList.appendChild(document.createElement('p')).innerText = "..."
         });
     });
     document.body.innerHTML = newBody.innerHTML;
@@ -197,7 +202,7 @@ function updateTikuCount() {
         let key = localStorage.key(index);
         if (key.startsWith(id)) cmrData.tikuCount++;
     }
-    document.getElementById('tikuCount').innerText = cmrData.tikuCount / 3
+    document.getElementById('tikuCount').innerText = cmrData.tikuCount / 4
 }
 
 function startExecute() {
